@@ -85,7 +85,7 @@ public class PerformanceRunner extends BlockJUnit4ClassRunner {
             int warmUpInvocations = getWarmUpInvocations(method);
             int warmUpTime = getWarmUpTime(method);
 
-            if (warmUpInvocations <= 0 && warmUpTime <= 0) {
+            if (warmUpInvocations < 0 && warmUpTime < 0) {
                 errors.add(new Error("Method " + method.getName() + "() should provide a valid warmUpInvocations or warmUpTime"));
             }
 
@@ -175,17 +175,21 @@ public class PerformanceRunner extends BlockJUnit4ClassRunner {
     protected Statement methodInvoker(FrameworkMethod method, Object test) {
         Statement methodInvoker = super.methodInvoker(method, test);
 
-        Statement invokeWarmUp = methodInvoker;
+        Statement invokeWarmUp = null;
+        if( method.getAnnotation(PerformanceTest.class).warmUpInvocations() > 0 ||
+                method.getAnnotation(PerformanceTest.class).warmUpTime() > 0) {
+            invokeWarmUp = methodInvoker;
 
-        invokeWarmUp = withWarmUpIterationStartedEvents(method, test, invokeWarmUp);
-        invokeWarmUp = withWarmUpIterationFinishedEvents(method, test, invokeWarmUp);
-        invokeWarmUp = withBeforeWarmUpIterations(method, test, invokeWarmUp);
-        invokeWarmUp = withAfterWarmUpIterations(method, test, invokeWarmUp);
-        invokeWarmUp = withWarmUpIterations(method, test, invokeWarmUp);
-        invokeWarmUp = withWarmUpStartedEvents(method, test, invokeWarmUp);
-        invokeWarmUp = withWarmUpFinishedEvents(method, test, invokeWarmUp);
-        invokeWarmUp = withBeforeWarmUps(method, test, invokeWarmUp);
-        invokeWarmUp = withAfterWarmUps(method, test, invokeWarmUp);
+            invokeWarmUp = withWarmUpIterationStartedEvents(method, test, invokeWarmUp);
+            invokeWarmUp = withWarmUpIterationFinishedEvents(method, test, invokeWarmUp);
+            invokeWarmUp = withBeforeWarmUpIterations(method, test, invokeWarmUp);
+            invokeWarmUp = withAfterWarmUpIterations(method, test, invokeWarmUp);
+            invokeWarmUp = withWarmUpIterations(method, test, invokeWarmUp);
+            invokeWarmUp = withWarmUpStartedEvents(method, test, invokeWarmUp);
+            invokeWarmUp = withWarmUpFinishedEvents(method, test, invokeWarmUp);
+            invokeWarmUp = withBeforeWarmUps(method, test, invokeWarmUp);
+            invokeWarmUp = withAfterWarmUps(method, test, invokeWarmUp);
+        }
 
         Statement invokePerformanceTest = methodInvoker;
 
@@ -199,7 +203,12 @@ public class PerformanceRunner extends BlockJUnit4ClassRunner {
         invokePerformanceTest = withBeforePerformanceTests(method, test, invokePerformanceTest);
         invokePerformanceTest = withAfterPerformanceTests(method, test, invokePerformanceTest);
 
-        return new RunSerial(invokeWarmUp, invokePerformanceTest);
+        if(invokeWarmUp != null) {
+            return new RunSerial(invokeWarmUp, invokePerformanceTest);
+        } else {
+            return new RunSerial(invokePerformanceTest);
+        }
+
     }
 
 

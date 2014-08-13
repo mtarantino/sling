@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collections;
 import java.util.Dictionary;
+import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -35,6 +36,7 @@ import org.apache.felix.scr.annotations.Reference;
 import org.apache.sling.junit.Renderer;
 import org.apache.sling.junit.RendererSelector;
 import org.apache.sling.junit.RequestParser;
+import org.apache.sling.junit.SlingTestContextProvider;
 import org.apache.sling.junit.TestSelector;
 import org.apache.sling.junit.TestsManager;
 import org.osgi.service.component.ComponentContext;
@@ -139,7 +141,7 @@ public class JUnitServlet extends HttpServlet {
     throws ServletException, IOException {
         final boolean forceReload = getForceReloadOption(request);
         
-        // Redirect to / if called without it, and serve CSS if requested 
+        // Redirect to / if called without it, and serve CSS if requested
         {
             final String pi = request.getPathInfo();
             if(pi == null) {
@@ -189,6 +191,21 @@ public class JUnitServlet extends HttpServlet {
         final boolean forceReload = getForceReloadOption(request);
         log.info("POST request, executing tests: {}, {}={}", 
                 new Object[] { selector, FORCE_RELOAD_PARAM, forceReload});
+
+        if(!SlingTestContextProvider.hasContext()) {
+            SlingTestContextProvider.createContext();
+        }
+
+        Enumeration<String> parameterNames = request.getParameterNames();
+
+        while (parameterNames.hasMoreElements()) {
+            String paramName = parameterNames.nextElement();
+
+            String[] paramValues = request.getParameterValues(paramName);
+            if(paramValues.length > 0) {
+                SlingTestContextProvider.getContext().input().put(paramName, paramValues[0]);
+            }
+        }
         
         final Renderer renderer = rendererSelector.getRenderer(selector);
         if(renderer == null) {

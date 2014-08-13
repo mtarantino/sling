@@ -229,19 +229,4 @@ public class PerformanceRunnerTest {
         assertTestFails(ExecutionStrategyNotSpecified.class, "Method test() should provide a valid runInvocations or runTime");
     }
 
-    @RunWith(PerformanceRunner.class)
-    public static class WarmUpStrategyNotSpecified {
-
-        @PerformanceTest(runInvocations = 10)
-        public void test() {
-
-        }
-
-    }
-
-    @Test
-    public void testWarmUpStrategyNotSpecified() {
-        assertTestFails(WarmUpStrategyNotSpecified.class, "Method test() should provide a valid warmUpInvocations or warmUpTime");
-    }
-
 }
